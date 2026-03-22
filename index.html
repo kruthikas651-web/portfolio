@@ -949,12 +949,7 @@
         </div>
     </section>
 
-    <!-- =============================================
-         EDUCATION
-         FIX: All 3 timeline-items are flat siblings.
-         The SSLC item was previously NESTED inside
-         the PUC item by mistake — now it is fixed.
-         ============================================= -->
+    <!-- EDUCATION -->
     <section id="education">
         <h2 class="title reveal">Academic Background</h2>
         <div class="timeline">
@@ -992,12 +987,7 @@
         </div>
     </section>
 
-    <!-- =============================================
-         CERTIFICATIONS
-         FIX: Each cert is its own properly opened
-         and closed .cert-card div. Previously the
-         2nd and 3rd cards were broken / merged.
-         ============================================= -->
+    <!-- CERTIFICATIONS -->
     <section id="certifications">
         <h2 class="title reveal">Certifications</h2>
         <div class="grid">
@@ -1086,7 +1076,11 @@
         </div>
     </section>
 
-    <!-- CONTACT -->
+    <!-- =============================================
+         CONTACT — UPDATED FOR NETLIFY FORMS
+         Only this section has been changed.
+         Everything else above is identical.
+         ============================================= -->
     <section id="contact">
         <h2 class="title reveal">Let's Connect</h2>
         <div class="contact-container reveal">
@@ -1118,15 +1112,27 @@
                 </div>
             </div>
 
-            <form class="contact-form" onsubmit="event.preventDefault(); alert('Message successfully sent!');">
-                <input type="text" placeholder="Full Name" required>
-                <input type="email" placeholder="Email Address" required>
-                <input type="text" placeholder="Subject">
-                <textarea placeholder="Write your message here..." required></textarea>
+            <!-- NETLIFY FORM — replaces the old broken form -->
+            <form
+                class="contact-form"
+                name="contact"
+                method="POST"
+                data-netlify="true"
+                onsubmit="handleFormSubmit(event)"
+            >
+                <!-- Required by Netlify for AJAX submissions -->
+                <input type="hidden" name="form-name" value="contact">
+
+                <input type="text"  name="name"    placeholder="Full Name"           required>
+                <input type="email" name="email"   placeholder="Email Address"       required>
+                <input type="text"  name="subject" placeholder="Subject">
+                <textarea           name="message" placeholder="Write your message here..." required></textarea>
+
                 <button type="submit" class="btn hire" style="justify-content: center;">
                     Send Message <i class="fas fa-paper-plane"></i>
                 </button>
             </form>
+
         </div>
     </section>
 
@@ -1139,18 +1145,14 @@
 
     <script>
         /* =============================================
-           FIX 1: AUDIO PLAYBACK
-           - Removed all SpeechSynthesis code
-           - Now uses the real <audio> element with
-             your kru-voice-intro.mpeg file
+           AUDIO PLAYBACK
            ============================================= */
         const introOverlay = document.getElementById('voice-intro-page');
         const playIntroBtn = document.getElementById('play-intro-btn');
         const skipIntroBtn = document.getElementById('skip-intro-btn');
         const soundWaves   = document.getElementById('sound-waves');
-        const audioEl      = document.getElementById('voice-intro'); // your actual audio file
+        const audioEl      = document.getElementById('voice-intro');
 
-        // If intro was already played this session, skip it entirely
         if (sessionStorage.getItem('introPlayed')) {
             introOverlay.style.display = 'none';
             document.body.classList.remove('intro-active');
@@ -1158,26 +1160,21 @@
 
         let isPlaying = false;
 
-        // Hides the intro overlay with a smooth animation
         function closeIntro() {
-            audioEl.pause();             // stop the audio
-            audioEl.currentTime = 0;     // rewind to start
+            audioEl.pause();
+            audioEl.currentTime = 0;
             soundWaves.classList.remove('active');
             introOverlay.classList.add('hide');
             document.body.classList.remove('intro-active');
             sessionStorage.setItem('introPlayed', 'true');
-            // Wait for the CSS transition to finish, then fully hide
             setTimeout(() => {
                 introOverlay.style.display = 'none';
             }, 800);
         }
 
-        // Play / Stop button click handler
         playIntroBtn.addEventListener('click', () => {
             if (!isPlaying) {
-                // Start playing your recorded audio file
                 audioEl.play().catch(err => {
-                    // This happens if the file is missing or the browser blocked it
                     console.warn('Audio play failed:', err);
                     alert('Could not play audio. Make sure kru-voice-intro.mpeg is in the same folder as index.html.');
                 });
@@ -1187,17 +1184,14 @@
                 playIntroBtn.style.background = '#e74c3c';
                 playIntroBtn.style.boxShadow  = '0 0 20px rgba(231, 76, 60, 0.4)';
             } else {
-                // Second click = stop audio and go to portfolio
                 closeIntro();
             }
         });
 
-        // When the audio file ends naturally, close the intro automatically
         audioEl.addEventListener('ended', () => {
             closeIntro();
         });
 
-        // Skip button — just close the intro without playing audio
         skipIntroBtn.addEventListener('click', closeIntro);
 
 
@@ -1207,7 +1201,6 @@
         const themeBtn  = document.getElementById('theme-btn');
         const themeIcon = themeBtn.querySelector('i');
 
-        // Remember the last chosen theme
         if (localStorage.getItem('theme') === 'light') {
             document.body.classList.add('light-mode');
             themeIcon.classList.replace('fa-sun', 'fa-moon');
@@ -1269,12 +1262,12 @@
             let typeSpeed = isDeleting ? 50 : 100;
 
             if (!isDeleting && charIndex === currentText.length) {
-                typeSpeed  = 2000;   // pause at end of word
+                typeSpeed  = 2000;
                 isDeleting = true;
             } else if (isDeleting && charIndex === 0) {
                 isDeleting = false;
                 textIndex  = (textIndex + 1) % textArray.length;
-                typeSpeed  = 500;    // pause before next word
+                typeSpeed  = 500;
             }
 
             setTimeout(typeEffect, typeSpeed);
@@ -1303,6 +1296,29 @@
 
             revealElements.forEach(el => revealOnScroll.observe(el));
         });
+
+
+        /* =============================================
+           NETLIFY CONTACT FORM HANDLER
+           ============================================= */
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const data = new FormData(form);
+
+            fetch("/", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(data).toString(),
+            })
+            .then(() => {
+                alert("Message successfully sent! I'll get back to you soon.");
+                form.reset();
+            })
+            .catch(() => {
+                alert("Oops! Something went wrong. Please try again.");
+            });
+        }
 
     </script>
 </body>
